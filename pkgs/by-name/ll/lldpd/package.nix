@@ -1,0 +1,81 @@
+{
+  stdenv,
+  fetchurl,
+  fetchpatch,
+  lib,
+  libevent,
+  net-snmp,
+  openssl,
+  pkg-config,
+  readline,
+  removeReferencesTo,
+}:
+
+stdenv.mkDerivation rec {
+  pname = "lldpd";
+  version = "1.0.20";
+
+  src = fetchurl {
+    url = "https://media.luffy.cx/files/lldpd/${pname}-${version}.tar.gz";
+    hash = "sha256-YbjLItSHnmj3glovuOHpKrtKukdzl3zwJYvDLtn1VFA=";
+  };
+
+  patches = [
+    (fetchpatch {
+      # https://github.com/lldpd/lldpd/security/advisories/GHSA-2g8p-2h3j-63m3
+      name = "CVE-2026-46433.patch";
+      url = "https://github.com/lldpd/lldpd/commit/ca931be63a9cae0fcd8e9b6ae4e916d49f141cd6.patch";
+      hash = "sha256-Zy0vp3OnFjb6f8BUsd3p+SNI2jGPr60OJviLDf/F9mU=";
+    })
+  ];
+
+  configureFlags = [
+    "--localstatedir=/var"
+    "--enable-pie"
+    "--with-snmp"
+    "--with-systemdsystemunitdir=\${out}/lib/systemd/system"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    "--with-launchddaemonsdir=no"
+    "--with-privsep-chroot=/var/empty"
+    "--with-privsep-group=nogroup"
+    "--with-privsep-user=nobody"
+  ];
+
+  nativeBuildInputs = [
+    pkg-config
+    removeReferencesTo
+  ];
+  buildInputs = [
+    libevent
+    readline
+    net-snmp
+    openssl
+  ];
+
+  preConfigure = lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+    # Yes, this works and is required for cross :'/
+    export PATH=$PATH:${net-snmp.dev}/bin
+  '';
+
+  enableParallelBuilding = true;
+
+  outputs = [
+    "out"
+    "dev"
+    "man"
+    "doc"
+  ];
+
+  preFixup = ''
+    find $out -type f -exec remove-references-to -t ${stdenv.cc} '{}' +
+  '';
+
+  meta = {
+    description = "802.1ab implementation (LLDP) to help you locate neighbors of all your equipments";
+    homepage = "https://lldpd.github.io/";
+    license = lib.licenses.isc;
+    maintainers = with lib.maintainers; [ fpletz ];
+    platforms = lib.platforms.unix;
+  };
+}
