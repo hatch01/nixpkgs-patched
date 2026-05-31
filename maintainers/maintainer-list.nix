@@ -9259,6 +9259,12 @@
     githubId = 119691;
     name = "Michael Gough";
   };
+  fraggerfox = {
+    email = "santhosh.raju@gmail.com";
+    github = "fraggerfox";
+    githubId = 189939;
+    name = "Santhosh Raju";
+  };
   fraioveio = {
     email = "francesco@vecchia.lol";
     github = "FraioVeio";
@@ -19514,6 +19520,12 @@
     githubId = 1488603;
     name = "François Espinet";
   };
+  netpleb = {
+    email = "netpleb@proton.me";
+    github = "netpleb";
+    githubId = 130105838;
+    name = "netpleb";
+  };
   netthier = {
     email = "netthier@proton.me";
     name = "nett_hier";
@@ -20404,6 +20416,12 @@
     github = "nyukuru";
     email = "nyu@nyuku.ru";
     githubId = 97425873;
+  };
+  nyxar77 = {
+    name = "nyxar77";
+    github = "nyxar77";
+    email = "dev@nyxar.space";
+    githubId = 153492661;
   };
   nyxonios = {
     name = "nyxonios";
@@ -21438,6 +21456,12 @@
     githubId = 7420227;
     name = "Peter Tri Ho";
   };
+  peterwaller-arm = {
+    email = "peter.waller@arm.com";
+    github = "peterwaller-arm";
+    githubId = 52030119;
+    name = "Peter Waller";
+  };
   peterwilli = {
     email = "peter@codebuffet.co";
     github = "peterwilli";
@@ -22152,6 +22176,12 @@
     github = "presto8";
     githubId = 246631;
     keys = [ { fingerprint = "3E46 7EF1 54AA A1D0 C7DF  A694 E45C B17F 1940 CA52"; } ];
+  };
+  pretentiousUsername = {
+    name = "Ian Mitchell";
+    email = "mitchell.ian.2001@gmail.com";
+    github = "pretentiousUsername";
+    githubId = 94192644;
   };
   priegger = {
     email = "philipp@riegger.name";
@@ -28387,12 +28417,6 @@
     github = "ttschnz";
     githubId = 77488956;
     name = "Timothy Tschnitzel";
-  };
-  ttuegel = {
-    email = "ttuegel@mailbox.org";
-    github = "ttuegel";
-    githubId = 563054;
-    name = "Thomas Tuegel";
   };
   tu-maurice = {
     email = "valentin.gehrke+nixpkgs@zom.bi";

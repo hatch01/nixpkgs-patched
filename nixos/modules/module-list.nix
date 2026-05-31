@@ -806,6 +806,7 @@
   ./services/matrix/hookshot.nix
   ./services/matrix/lk-jwt-service.nix
   ./services/matrix/matrix-alertmanager.nix
+  ./services/matrix/matrix-authentication-service.nix
   ./services/matrix/maubot.nix
   ./services/matrix/mautrix-discord.nix
   ./services/matrix/mautrix-meta.nix
@@ -1017,6 +1018,7 @@
   ./services/monitoring/das_watchdog.nix
   ./services/monitoring/datadog-agent.nix
   ./services/monitoring/do-agent.nix
+  ./services/monitoring/flap-alerted.nix
   ./services/monitoring/fluent-bit.nix
   ./services/monitoring/fusion-inventory.nix
   ./services/monitoring/gatus.nix
