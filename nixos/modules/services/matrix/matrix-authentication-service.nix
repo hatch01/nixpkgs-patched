@@ -14,13 +14,11 @@ let
     isAttrs
     isList
     mapAttrs
-    mkDefault
     mkEnableOption
     mkIf
     mkOption
     mkPackageOption
     optional
-    optionalAttrs
     types
     ;
 
@@ -45,6 +43,8 @@ let
     else
       pruned;
   configFile = format.generate "config.yaml" finalSettings;
+
+  extraConfigArgs = lib.imap0 (i: _: "%d/config-${toString i}") cfg.extraConfigFiles;
 in
 {
   meta.maintainers = with lib.maintainers; [
@@ -370,6 +370,20 @@ in
         such as the Matrix homeserver if it's running on the same host.
       '';
     };
+
+    credentials = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = ''
+        Name -> source file path. Exposed to the unit via LoadCredential and
+        readable inside the service at ''${CREDENTIALS_DIRECTORY}/<name>.
+
+        For example :
+        services.matrix-authentication-service.credentials."synapse-secret" = "/run/agenix/synapse-shared";
+        services.matrix-authentication-service.settings.matrix.secret_file =
+          "''${CREDENTIALS_DIRECTORY}/synapse-secret";
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -387,16 +401,21 @@ in
     systemd.services.matrix-authentication-service = rec {
       after = optional cfg.createDatabase "postgresql.service" ++ cfg.serviceDependencies;
       wants = after;
+      path = [ pkgs.envsubst ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         DynamicUser = true;
-        ExecStartPre = ''
-          ${getExe cfg.package} config check \
-            ${concatMapStringsSep " " (x: "--config ${x}") ([ configFile ] ++ cfg.extraConfigFiles)}
+        LoadCredential =
+          (lib.imap0 (i: path: "config-${toString i}:${path}") cfg.extraConfigFiles)
+          ++ (lib.mapAttrsToList (name: path: "${name}:${path}") cfg.credentials);
+        ExecStartPre = pkgs.writeShellScript "mas-prepare" ''
+          envsubst -i ${configFile} > /run/matrix-authentication-service/config.yaml
+          ${getExe cfg.package} config check --config /run/matrix-authentication-service/config.yaml \
+            ${concatMapStringsSep " " (x: "--config ${x}") cfg.extraConfigFiles}
         '';
         ExecStart = ''
-          ${getExe cfg.package} server \
-            ${concatMapStringsSep " " (x: "--config ${x}") ([ configFile ] ++ cfg.extraConfigFiles)}
+          ${getExe cfg.package} server --config /run/matrix-authentication-service/config.yaml \
+            ${concatMapStringsSep " " (x: "--config ${x}") cfg.extraConfigFiles}
         '';
         Restart = "on-failure";
         RestartSec = "1s";
@@ -438,6 +457,7 @@ in
         # Working and state directories
         StateDirectory = "matrix-authentication-service";
         StateDirectoryMode = "0700";
+        RuntimeDirectory = "matrix-authentication-service";
         WorkingDirectory = "/var/lib/matrix-authentication-service";
       };
     };
