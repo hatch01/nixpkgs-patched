@@ -370,6 +370,20 @@ in
         such as the Matrix homeserver if it's running on the same host.
       '';
     };
+
+    credentials = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = ''
+        Name -> source file path. Exposed to the unit via LoadCredential and
+        readable inside the service at /run/credentials/matrix-authentication-service.service/<name>.
+      '';
+      example = ''
+        services.matrix-authentication-service.credentials."synapse-secret" = "/run/agenix/synapse-shared";
+        services.matrix-authentication-service.settings.matrix.secret_file =
+          "/run/credentials/matrix-authentication-service.service/synapse-secret";
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -390,7 +404,9 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         DynamicUser = true;
-        LoadCredential = lib.imap0 (i: path: "config-${toString i}:${path}") cfg.extraConfigFiles;
+        LoadCredential =
+          (lib.imap0 (i: path: "config-${toString i}:${path}") cfg.extraConfigFiles)
+          ++ (lib.mapAttrsToList (name: path: "${name}:${path}") cfg.credentials);
         ExecStartPre = ''
           ${getExe cfg.package} config check \
             ${concatMapStringsSep " " (x: "--config ${x}") configFileArgs}
