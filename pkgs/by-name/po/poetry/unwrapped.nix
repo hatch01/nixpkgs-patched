@@ -3,6 +3,7 @@
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
+  fetchpatch,
   findpython,
   installShellFiles,
   build,
@@ -44,6 +45,16 @@ buildPythonPackage rec {
     tag = version;
     hash = "sha256-Mb1etVmBm542q7FrcMU6pzXdMUDQSpI8DFg/gbOiG4U=";
   };
+
+  patches = [
+    # since virtualenv update to 21.6.1 the poetry tests do not pass.
+    # This should be removed once the upstream PR is merged and released.
+    # See : https://github.com/python-poetry/poetry/pull/10997
+    (fetchpatch {
+      url = "https://github.com/python-poetry/poetry/commit/bffb997db2bc76c232a981b9697cf9b9b8ef5a99.patch";
+      hash = "sha256-cY4rQG/Fq+O90jV+plRIjzSxqeA00escLXt8F6ZSoqE=";
+    })
+  ];
 
   build-system = [
     poetry-core
