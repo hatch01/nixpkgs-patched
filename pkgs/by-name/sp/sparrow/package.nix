@@ -25,7 +25,7 @@
 
 let
   pname = "sparrow";
-  version = "2.4.2";
+  version = "2.5.3";
 
   openjdk = zulu25.override { enableJavaFX = true; };
 
@@ -36,12 +36,26 @@ let
     }
     ."${stdenvNoCC.hostPlatform.system}";
 
+  javaArch =
+    {
+      x86_64-linux = "x64";
+      aarch64-linux = "aarch64";
+    }
+    ."${stdenvNoCC.hostPlatform.system}";
+
+  jnaArch =
+    {
+      x86_64-linux = "x86-64";
+      aarch64-linux = "aarch64";
+    }
+    ."${stdenvNoCC.hostPlatform.system}";
+
   src = fetchurl {
     url = "https://github.com/sparrowwallet/${pname}/releases/download/${version}/sparrowwallet-${version}-${sparrowArch}.tar.gz";
     hash =
       {
-        x86_64-linux = "sha256-BvtQZ+b+Hj+9eBdLg/KfYUeRQth0LWwwbZUQMfyTayE=";
-        aarch64-linux = "sha256-SMVO07kuTo1Yfj+8QfPOvkLR4551tQadJPoIMdT9GFE=";
+        x86_64-linux = "sha256-xRtMh8nYHzjMyb8zSPQZNIbcfQIuKk4izfPW/PLK2zg=";
+        aarch64-linux = "sha256-Kl4SV5MSIfCszUI2uN9/eLK+25gkSWkRHoSf8X837VM=";
       }
       ."${stdenvNoCC.hostPlatform.system}";
 
@@ -72,12 +86,12 @@ let
 
   manifest = fetchurl {
     url = "https://github.com/sparrowwallet/${pname}/releases/download/${version}/${pname}-${version}-manifest.txt";
-    hash = "sha256-cv/bkUZArASgWjgEphdWc6p8R9uOOkT+Idc53sjEOQ0=";
+    hash = "sha256-oVR5lJOWHTyEe+fBbxa+ZPh9GERHlZbZMPmaGImmdhg=";
   };
 
   manifestSignature = fetchurl {
     url = "https://github.com/sparrowwallet/${pname}/releases/download/${version}/${pname}-${version}-manifest.txt.asc";
-    hash = "sha256-lIamtUX45HVTrUJKbiGsFkRanM17KaZS0NwlTAoptEE=";
+    hash = "sha256-9ohRv/3rcOr78Mr0Bfny9zn+SqpLFaf0hn9G2LMAc8Q=";
   };
 
   publicKey = ./publickey.asc;
@@ -117,10 +131,17 @@ let
       --add-reads=com.sparrowwallet.merged.module=com.fasterxml.jackson.core
       --add-reads=com.sparrowwallet.merged.module=co.nstant.in.cbor
       --add-reads=kotlin.stdlib=kotlinx.coroutines.core
+      --enable-native-access=com.sparrowwallet.drongo
+      --enable-native-access=com.sparrowwallet.merged.module
+      --enable-native-access=javafx.graphics
+      --enable-native-access=com.fazecast.jSerialComm
+      --enable-native-access=org.usb4java
       -m com.sparrowwallet.sparrow
     )
 
-    XDG_DATA_DIRS=${gsettings-desktop-schemas}/share/gsettings-schemas/${gsettings-desktop-schemas.name}:${gtk3}/share/gsettings-schemas/${gtk3.name}:$XDG_DATA_DIRS ${openjdk}/bin/java ''${params[@]} $@
+    XDG_DATA_DIRS=${gsettings-desktop-schemas}/share/gsettings-schemas/${gsettings-desktop-schemas.name}:${gtk3}/share/gsettings-schemas/${gtk3.name}:$XDG_DATA_DIRS \
+    LD_LIBRARY_PATH=@nativeLibs@''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH} \
+    ${openjdk}/bin/java ''${params[@]} $@
   '';
 
   torWrapper = writeScript "tor-wrapper" ''
@@ -159,6 +180,9 @@ let
       gnugrep
       openjdk
       autoPatchelfHook
+    ];
+
+    buildInputs = [
       (lib.getLib stdenv.cc.cc)
       zlib
       libusb1
@@ -215,6 +239,31 @@ let
       find . | grep "\.so$" | xargs -- chmod ugo+x
       popd
 
+      # Provide native libs for LD_LIBRARY_PATH
+      mkdir native-libs
+      cp lib/runtime/lib/libargon2.so \
+         lib/runtime/lib/libbwt_jni.so \
+         lib/runtime/lib/libopenpnp-capture.so \
+         native-libs/
+      chmod ugo+x native-libs/*.so
+
+      # secp256k1 explicitly looks in java.home/lib or inside the module jar
+      mkdir -p modules/com.sparrowwallet.drongo/native/linux/${javaArch}
+      cp lib/runtime/lib/libsecp256k1.so modules/com.sparrowwallet.drongo/native/linux/${javaArch}/
+
+      # JNA extracts from resource path
+      mkdir -p modules/com.sparrowwallet.merged.module/com/sun/jna/linux-${jnaArch}
+      cp lib/runtime/lib/libjnidispatch.so modules/com.sparrowwallet.merged.module/com/sun/jna/linux-${jnaArch}/
+
+      # hidapi extracts from resource path via JNA
+      mkdir -p modules/com.sparrowwallet.merged.module/linux-${jnaArch}
+      cp lib/runtime/lib/libhidapi.so modules/com.sparrowwallet.merged.module/linux-${jnaArch}/
+      cp lib/runtime/lib/libhidapi-libusb.so modules/com.sparrowwallet.merged.module/linux-${jnaArch}/
+
+      # usb4java extracts from resource path
+      mkdir -p modules/org.usb4java/org/usb4java/linux-${jnaArch}
+      cp lib/runtime/lib/libusb4java.so modules/org.usb4java/org/usb4java/linux-${jnaArch}/
+
       # Replace the embedded Tor binary (which is in a Tar archive)
       # with one from Nixpkgs.
       gzip -c ${torWrapper}  > tor.gz
@@ -225,6 +274,7 @@ let
       mkdir -p $out
       cp manifest.txt $out/
       cp -r modules/ $out/
+      cp -r native-libs/ $out/
     '';
   };
 in
@@ -281,6 +331,7 @@ stdenvNoCC.mkDerivation rec {
     install -D -m 777 ${launcher} $out/bin/sparrow-desktop
     substituteAllInPlace $out/bin/sparrow-desktop
     substituteInPlace $out/bin/sparrow-desktop --subst-var-by jdkModules ${jdk-modules}
+    substituteInPlace $out/bin/sparrow-desktop --subst-var-by nativeLibs ${sparrow-modules}/native-libs
 
     mkdir -p $out/share/icons
     ln -s ${sparrow-icons}/hicolor $out/share/icons
@@ -313,6 +364,7 @@ stdenvNoCC.mkDerivation rec {
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
       msgilligan
+      eymeric
     ];
     platforms = [
       "x86_64-linux"
