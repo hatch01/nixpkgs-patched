@@ -1,0 +1,108 @@
+{
+  lib,
+  fetchFromGitLab,
+  python3Packages,
+  fetchPypi,
+  apksigner,
+  installShellFiles,
+}:
+
+python3Packages.buildPythonApplication (finalAttrs: {
+  pname = "fdroidserver";
+  version = "2.4.5";
+
+  pyproject = true;
+
+  src = fetchFromGitLab {
+    owner = "fdroid";
+    repo = "fdroidserver";
+    tag = finalAttrs.version;
+    hash = "sha256-AiDhtYpaOXTRVY5QA7fOgfGbpCtdJYzt3tnY2lrGJao=";
+  };
+
+  pythonRelaxDeps = [
+    "androguard"
+    "pyasn1"
+    "pyasn1-modules"
+    "ruamel-yaml"
+    "ruamel.yaml"
+  ];
+
+  pythonRemoveDeps = [
+    "puremagic" # Only used as a fallback when magic is not installed
+  ];
+
+  postPatch = ''
+    substituteInPlace fdroidserver/common.py \
+      --replace-fail "FDROID_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))" "FDROID_PATH = '$out/bin'"
+  '';
+
+  preConfigure = ''
+    ${python3Packages.python.pythonOnBuildForHost.interpreter} setup.py compile_catalog
+  '';
+
+  postInstall = ''
+    patchShebangs gradlew-fdroid
+    install -m 0755 gradlew-fdroid $out/bin
+    installShellCompletion --cmd fdroid \
+      --bash completion/bash-completion
+  '';
+
+  nativeBuildInputs = [ installShellFiles ];
+
+  build-system = with python3Packages; [
+    setuptools
+    babel
+  ];
+
+  dependencies = with python3Packages; [
+    asn1crypto
+    androguard
+    biplist
+    clint
+    defusedxml
+    gitpython
+    libcloud
+    libvirt-python
+    magic
+    mwclient
+    oscrypto
+    paramiko
+    pillow
+    platformdirs
+    pyasn1
+    pyasn1-modules
+    pycountry
+    python-vagrant
+    pyyaml
+    qrcode
+    requests
+    ruamel-yaml
+    sdkmanager
+    yamllint
+  ];
+
+  makeWrapperArgs = [
+    "--prefix"
+    "PATH"
+    ":"
+    "${lib.makeBinPath [ apksigner ]}"
+  ];
+
+  # no tests
+  doCheck = false;
+
+  pythonImportsCheck = [ "fdroidserver" ];
+
+  meta = {
+    homepage = "https://gitlab.com/fdroid/fdroidserver";
+    changelog = "https://gitlab.com/fdroid/fdroidserver/-/blob/${finalAttrs.version}/CHANGELOG.md";
+    description = "Server and tools for F-Droid, the Free Software repository system for Android";
+    license = lib.licenses.agpl3Plus;
+    maintainers = with lib.maintainers; [
+      linsui
+      jugendhacker
+    ];
+    mainProgram = "fdroid";
+  };
+})
