@@ -4,10 +4,12 @@
   airplay-cli,
   python3Packages,
   fetchFromGitHub,
+  fetchurl,
   ffmpeg_7-headless,
   nixosTests,
   openssl,
   replaceVars,
+  unzip,
   writableTmpDirAsHomeHook,
   providers ? [ ],
 }:
@@ -89,6 +91,22 @@ pythonPackages.buildPythonApplication (finalAttrs: {
     hash = "sha256-5YfXmk4GE1BNdWLFbAvBo1s6SlD3Mo38Oa6zgehTJTs=";
   };
 
+  # The bundled provider credentials (Spotify client id, Qobuz keys, ...) are not part of
+  # the source repository: upstream provisions them from the private music-assistant/appvars
+  # repository during its release CI (see music_assistant/helpers/app_vars.py).
+  appSecrets = fetchurl {
+    url = "https://github.com/music-assistant/server/releases/download/${finalAttrs.version}/music_assistant-${finalAttrs.version}-py3-none-any.whl";
+    downloadToTemp = true;
+    recursiveHash = true;
+    nativeBuildInputs = [
+      unzip
+    ];
+    postFetch = ''
+      unzip "$downloadedFile" music_assistant/helpers/app_secrets.json -d "$out"
+    '';
+    hash = "sha256-cTH0b5kNanrpCekKyQJzKVuIR/fYbgf8RCHuDsT5aho=";
+  };
+
   patches = [
     (replaceVars ./ffmpeg.patch {
       ffmpeg = lib.getExe' ffmpeg_7-headless "ffmpeg";
@@ -138,6 +156,11 @@ pythonPackages.buildPythonApplication (finalAttrs: {
     rm -rv \
       music_assistant/providers/airplay_receiver/bin/{build_binaries.sh,shairport-sync-*} \
       music_assistant/providers/spotify/bin/librespot-*
+
+    # Copy the bundled provider credentials extracted from the official release wheel, as
+    # they are missing from the source tarball (see the appSecrets fetch above).
+    install -Dm644 "${finalAttrs.appSecrets}/music_assistant/helpers/app_secrets.json" music_assistant/helpers/app_secrets.json
+    test -f music_assistant/helpers/app_secrets.json
 
     found_bins=$(find music_assistant/ -wholename '*/bin/*' -type f -executable -print0 | tr '\0' ' ')
     if [[ -n $found_bins ]]; then
