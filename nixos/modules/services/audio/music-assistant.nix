@@ -6,6 +6,11 @@
   ...
 }:
 
+# Some providers (spotify, qobuz, ...) require shared provider credentials that are not
+# part of the upstream source repository. The package extracts them from the official
+# release wheel (see pkgs/by-name/mu/music-assistant/package.nix). Users can override
+# them with MASS_APP_VAR_* environment variables, documented on the providers option.
+
 let
   inherit (lib)
     mkIf
@@ -70,6 +75,20 @@ in
       ];
       description = ''
         List of provider names for which dependencies will be installed.
+
+        Providers that rely on shared provider credentials (e.g. `spotify`, `qobuz`, `apple_music`, `theaudiodb`, `fanarttv`)
+        work out of the box as we bundle the upstream "app variables" shipped in the official Music Assistant release wheel.
+
+        To use your own credentials for a provider, set the matching
+        `MASS_APP_VAR_*` environment variable, for example:
+        ```nix
+        systemd.services.music-assistant.environment = {
+          MASS_APP_VAR_SPOTIFY_CLIENT_ID = "your-client-id";
+        };
+        ```
+        or point Music Assistant at a JSON map of app variables via the `MASS_APP_VARS_FILE` environment variable.
+        See the upstream `music_assistant/helpers/app_vars.py` file and the corresponding
+        provider documentation (e.g. <https://www.music-assistant.io/music-providers/spotify/>) for the supported variables and setup steps.
       '';
     };
   };
