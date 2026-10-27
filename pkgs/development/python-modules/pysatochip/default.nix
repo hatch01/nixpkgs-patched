@@ -5,30 +5,51 @@
   certifi,
   cryptography,
   pyaes,
+  pycryptodomex,
   pyopenssl,
   pyscard,
+  pytestCheckHook,
+  setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "pysatochip";
-  version = "0.18.0";
-  format = "setuptools";
+  version = "0.18.7";
+  pyproject = true;
 
   src = fetchFromGitHub {
-    owner = "toporin";
+    owner = "Toporin";
     repo = "pysatochip";
     tag = "v${version}";
-    hash = "sha256-Axtxd/Jmdqo6JayCbDNk5wOToXT7/GlEKxWMC12mXyc=";
+    hash = "sha256-J4VGdeC+IowqWnCP8JFWGU8yPEaYCzfVn6F025/mwKY=";
   };
 
-  propagatedBuildInputs = [
+  build-system = [
+    setuptools
+  ];
+
+  dependencies = [
+    certifi
     cryptography
     pyaes
+    pycryptodomex
     pyopenssl
     pyscard
   ];
 
-  nativeCheckInputs = [ certifi ];
+  nativeCheckInputs = [
+    pytestCheckHook
+  ];
+
+  enabledTestPaths = [
+    "tests"
+  ];
+
+  disabledTestPaths = [
+    # Requires extra dependencies (nostr, click) for CLI
+    "tests/test_cli_commands.py"
+    "tests/test_cli_entry.py"
+  ];
 
   pythonImportsCheck = [ "pysatochip" ];
 
