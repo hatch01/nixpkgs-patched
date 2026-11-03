@@ -14861,6 +14861,8 @@ self: super: with self; {
 
   pycryptodomex = callPackage ../development/python-modules/pycryptodomex { };
 
+  pycryptotools = callPackage ../development/python-modules/pycryptotools { };
+
   pycsdr = callPackage ../development/python-modules/pycsdr { };
 
   pycsspeechtts = callPackage ../development/python-modules/pycsspeechtts { };
