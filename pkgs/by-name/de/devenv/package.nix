@@ -20,7 +20,6 @@
   sqlite,
   pkg-config,
   glibcLocalesUtf8,
-  boehmgc,
   libghostty-vt,
   zstd,
   llvmPackages,
@@ -73,7 +72,10 @@ buildRustPackage {
     hash = "sha256-MCSbrGsgWXod/Qzk4v5tYO/fev1d5OcEGZ2vzVAvMfQ=";
   };
 
-  cargoHash = "sha256-ed2k0D5tp7tlvpqXdxr4uGJozI2gvW1Dvz1SSJDR4NI=";
+  cargoPatches = [
+    ./bump-libghostty-vt.patch
+  ];
+  cargoHash = "sha256-8s4Y0p7J6Oz9oCtvbgQdJx27NVvUu54FjjYqQu/zBUY=";
 
   postPatch = ''
     substituteInPlace Cargo.toml \
