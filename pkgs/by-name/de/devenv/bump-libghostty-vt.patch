@@ -1,0 +1,22 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 7011049..4666949 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -5603,7 +5603,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+ [[package]]
+ name = "libghostty-vt"
+ version = "0.2.1"
+-source = "git+https://github.com/Uzaaft/libghostty-rs.git?branch=master#5988a0b78b4aa804d1c12e66bbfe662bd97d81c0"
++source = "git+https://github.com/Uzaaft/libghostty-rs.git?branch=master#84373f8d48b8f0b794e259f74a71a52686616f5d"
+ dependencies = [
+  "bitflags 2.13.0",
+  "int-enum",
+@@ -5613,7 +5613,7 @@ dependencies = [
+ [[package]]
+ name = "libghostty-vt-sys"
+ version = "0.2.1"
+-source = "git+https://github.com/Uzaaft/libghostty-rs.git?branch=master#5988a0b78b4aa804d1c12e66bbfe662bd97d81c0"
++source = "git+https://github.com/Uzaaft/libghostty-rs.git?branch=master#84373f8d48b8f0b794e259f74a71a52686616f5d"
+ dependencies = [
+  "pkg-config",
+ ]
