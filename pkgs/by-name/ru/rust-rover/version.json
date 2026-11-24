@@ -1,0 +1,18 @@
+{
+  "version": "2026.3.1",
+  "buildNumber": "263.7307.313",
+  "urls": {
+    "x86_64-linux": {
+      "url": "https://download.jetbrains.com/rustrover/RustRover-2026.3.1.tar.gz",
+      "hash": "sha256-MXBXmDczsIYw2LcFaZrgCaI7a4ITrN9wdbERJZj9iww="
+    },
+    "aarch64-linux": {
+      "url": "https://download.jetbrains.com/rustrover/RustRover-2026.3.1-aarch64.tar.gz",
+      "hash": "sha256-+XoFaMURDZQmtDxhLGqYbqoqcGSct8oufxaNTbjW5W0="
+    },
+    "aarch64-darwin": {
+      "url": "https://download.jetbrains.com/rustrover/RustRover-2026.3.1-aarch64.dmg",
+      "hash": "sha256-Bf0P6VXfKRxneaL0pADz4lWstw6ePFA5rXoCmYxFALg="
+    }
+  }
+}
