@@ -1,6 +1,6 @@
 # Mautrix-Discord {#module-services-mautrix-discord}
 
-*Source:* {file}`modules/services/matrix/mautrix-discord`
+*Source:* {file}`modules/services/matrix/mautrix/discord.nix`
 
 *Upstream documentation:* <https://docs.mau.fi/bridges/go/discord/index.html>
 
@@ -11,7 +11,7 @@
 The common setup is to enable the bridge, point it at your homeserver, and set the permissions you want to allow:
 
 1. Set `services.mautrix-discord.enable` to `true`.
-2. Set `services.mautrix-discord.settings.homeserver.address` and `services.mautrix-discord.settings.homeserver.domain`.
+2. Set `services.mautrix-discord.settings.homeserver.address` and `services.mautrix-discord.settings.homeserver.domain` (auto-detected when a local Synapse or Conduit is enabled).
 3. Override `services.mautrix-discord.settings.bridge.permissions` if the default relay permissions do not fit your deployment.
 
 The module provides sensible defaults for the appservice listener, registration tokens, and relay permissions.
@@ -54,26 +54,27 @@ If you want to store the bridge database outside the default SQLite file, set `s
 }
 ```
 
-If the connection needs a password, combine it with `services.mautrix-discord.environmentFile`:
+If the connection needs a password, combine it with `services.mautrix-discord.environmentFiles`:
 
 ```nix
 {
   services.mautrix-discord = {
-    environmentFile = "/run/secrets/mautrix-discord-env";
+    environmentFiles = [ "/run/secrets/mautrix-discord-env" ];
     settings.appservice.database.uri = "postgresql://mautrix:$DB_PASSWORD@localhost/mautrix-discord";
   };
 }
 ```
 
-Use `services.mautrix-discord.environmentFile` for any secret you do not want in the Nix store.
+Use `services.mautrix-discord.environmentFiles` for any secret you do not want in the Nix store.
 This includes database passwords, shared secrets, and similar values.
+String values referencing `$VARIABLE` or `${VARIABLE}` are substituted from the loaded environment files (`$$` produces a literal `$`, and a `json::` prefix parses the substituted value as JSON).
 
 Example:
 
 ```nix
 {
   services.mautrix-discord = {
-    environmentFile = "/run/secrets/mautrix-discord-env";
+    environmentFiles = [ "/run/secrets/mautrix-discord-env" ];
     settings.bridge.login_shared_secret_map = {
       "example.com" = "$SHARED_SECRET";
     };
@@ -126,21 +127,22 @@ Encryption needs additional bridge-side setup. See the [bridge encryption docume
 ```nix
 {
   services.mautrix-discord = {
-    environmentFile = "/run/secrets/mautrix-discord-env";
+    environmentFiles = [ "/run/secrets/mautrix-discord-env" ];
     settings.bridge.login_shared_secret_map = {
       "example.com" = "$SHARED_SECRET";
     };
   };
 }
 ```
-where  `/run/secrets/mautrix-discord-env` contains
+where `/run/secrets/mautrix-discord-env` contains
 ```
 SHARED_SECRET=aProtectedSecret
 ```
+Alternatively, setting `MAUTRIX_BRIDGE_LOGIN_SHARED_SECRET` (or `MAUTRIX_DISCORD_BRIDGE_LOGIN_SHARED_SECRET`) in an environment file populates `bridge.login_shared_secret_map` for `settings.homeserver.domain` automatically.
 
 ## Synapse Integration {#module-services-mautrix-discord-synapse}
 
-When `services.mautrix-discord.registerToSynapse` is `true`, the bridge writes its registration file automatically and Synapse picks it up.
+When `services.mautrix-discord.registerToSynapse` is `true`, a dedicated `mautrix-discord-registration.service` writes the registration file before Synapse starts and Synapse picks it up automatically. Registrations disable rate limiting by default (`rateLimited = false`).
 
 If Synapse is enabled, this option defaults to `true`.
 
