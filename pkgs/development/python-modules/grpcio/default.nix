@@ -1,0 +1,90 @@
+{
+  lib,
+  stdenv,
+  buildPythonPackage,
+  cacert,
+  c-ares,
+  cython,
+  fetchPypi,
+  openssl,
+  pkg-config,
+  protobuf,
+  python,
+  typing-extensions,
+  setuptools,
+  zlib,
+}:
+
+# This package should be updated together with the main grpc package and other
+# related python grpc packages.
+# nixpkgs-update: no auto update
+buildPythonPackage rec {
+  pname = "grpcio";
+  version = "1.85.1";
+  pyproject = true;
+
+  src = fetchPypi {
+    inherit pname version;
+    hash = "sha256-X1MCh9XeX39mCJ6tgd5E9nhxYpRNqzki76Zd/f8Qih0=";
+  };
+
+  outputs = [
+    "out"
+    "dev"
+  ];
+
+  build-system = [ setuptools ];
+
+  nativeBuildInputs = [
+    cython
+    pkg-config
+  ];
+
+  buildInputs = [
+    c-ares
+    openssl
+    zlib
+  ];
+
+  dependencies = [
+    protobuf
+    typing-extensions
+  ];
+
+  preBuild = ''
+    export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS="$NIX_BUILD_CORES"
+    if [ -z "$enableParallelBuilding" ]; then
+      GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=1
+    fi
+  ''
+  + lib.optionalString stdenv.hostPlatform.isDarwin ''
+    unset AR
+  '';
+
+  env = {
+    GRPC_BUILD_WITH_BORING_SSL_ASM = "";
+    GRPC_PYTHON_BUILD_SYSTEM_OPENSSL = 1;
+    GRPC_PYTHON_BUILD_SYSTEM_ZLIB = 1;
+    GRPC_PYTHON_BUILD_SYSTEM_CARES = 1;
+  };
+
+  # does not contain any tests
+  doCheck = false;
+
+  enableParallelBuilding = true;
+
+  postInstall = ''
+    ln -sf ${cacert}/etc/ssl/certs/ca-bundle.crt \
+      $out/${python.sitePackages}/grpc/_cython/_credentials/roots.pem
+  '';
+
+  pythonImportsCheck = [ "grpc" ];
+
+  meta = {
+    description = "HTTP/2-based RPC framework";
+    homepage = "https://grpc.io/grpc/python/";
+    changelog = "https://github.com/grpc/grpc/releases/tag/v${version}";
+    license = lib.licenses.asl20;
+    maintainers = [ ];
+  };
+}
