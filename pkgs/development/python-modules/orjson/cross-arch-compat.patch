@@ -1,0 +1,26 @@
+diff --git a/src/ffi/pystrref/mod.rs b/src/ffi/pystrref/mod.rs
+index 1f6f367..02c3277 100644
+--- a/src/ffi/pystrref/mod.rs
++++ b/src/ffi/pystrref/mod.rs
+@@ -1,7 +1,7 @@
+ // SPDX-License-Identifier: MPL-2.0
+ // Copyright ijl (2026)
+ 
+-#[cfg(feature = "avx512")]
++#[cfg(all(feature = "avx512", target_arch = "x86_64"))]
+ #[cfg(CPython)]
+ mod avx512;
+ mod object;
+diff --git a/src/ffi/pystrref/object.rs b/src/ffi/pystrref/object.rs
+index 69069fa..a5056be 100644
+--- a/src/ffi/pystrref/object.rs
++++ b/src/ffi/pystrref/object.rs
+@@ -32,7 +32,7 @@ static mut STR_CREATE_FN: StrDeserializer = super::scalar::str_impl_kind_scalar;
+ 
+ pub fn set_str_create_fn() {
+     unsafe {
+-        #[cfg(all(CPython, feature = "avx512"))]
++        #[cfg(all(CPython, feature = "avx512", target_arch = "x86_64"))]
+         if std::is_x86_feature_detected!("avx512vl") {
+             STR_CREATE_FN = super::avx512::create_str_impl_avx512vl;
+         }
