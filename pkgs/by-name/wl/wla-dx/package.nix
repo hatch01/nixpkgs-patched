@@ -1,0 +1,54 @@
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  cmake,
+  nix-update-script,
+}:
+
+stdenv.mkDerivation (finalAttrs: {
+  pname = "wla-dx";
+  version = "10.8";
+
+  src = fetchFromGitHub {
+    owner = "vhelin";
+    repo = "wla-dx";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-xdb6zXJvgdd+mjmO6J19dvf7VDd0W4y0ifGcSGPNT6A=";
+  };
+
+  installPhase = ''
+    runHook preInstall
+
+    mkdir -p $out/bin
+    install binaries/* $out/bin
+
+    runHook postInstall
+  '';
+
+  nativeBuildInputs = [ cmake ];
+
+  doInstallCheck = true;
+
+  # Each assembler prints its banner, including the version, when run without arguments
+  installCheckPhase = ''
+    runHook preInstallCheck
+
+    for asm in $out/bin/wla-*; do
+      $asm | grep -F "${finalAttrs.version}"
+    done
+
+    runHook postInstallCheck
+  '';
+
+  passthru.updateScript = nix-update-script { };
+
+  meta = {
+    homepage = "https://www.villehelin.com/wla.html";
+    changelog = "https://github.com/vhelin/wla-dx/releases/tag/v${finalAttrs.version}";
+    description = "Yet Another GB-Z80/Z80/6502/65C02/6510/65816/HUC6280/SPC-700 Multi Platform Cross Assembler Package";
+    license = lib.licenses.gpl2Plus;
+    maintainers = with lib.maintainers; [ naderhaj ];
+    platforms = lib.platforms.all;
+  };
+})

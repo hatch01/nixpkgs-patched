@@ -1,0 +1,49 @@
+{
+  stdenv,
+  lib,
+  buildPythonPackage,
+  fetchFromGitHub,
+  imagemagickBig,
+  pytestCheckHook,
+  setuptools,
+}:
+
+buildPythonPackage (finalAttrs: {
+  pname = "wand";
+  version = "0.7.3";
+  pyproject = true;
+
+  src = fetchFromGitHub {
+    owner = "emcconville";
+    repo = "wand";
+    tag = finalAttrs.version;
+    hash = "sha256-Ckoa1d9Nh5tSQVmrcCkI/Xn/dEYaj/6gyMPnmO/Joao=";
+  };
+
+  postPatch = ''
+    substituteInPlace wand/api.py --replace-fail \
+      "magick_home = os.environ.get('MAGICK_HOME')" \
+      "magick_home = '${imagemagickBig}'"
+  '';
+
+  build-system = [ setuptools ];
+
+  nativeCheckInputs = [
+    pytestCheckHook
+  ];
+
+  disabledTests = lib.optionals stdenv.hostPlatform.isDarwin [
+    # AssertionError: assert wand.color.Color('srgb(255,0,1.41553e-14)') == wand.color.Color('srgb(255,0,0)')
+    "test_sparse_color"
+  ];
+
+  passthru.imagemagick = imagemagickBig;
+
+  meta = {
+    changelog = "https://docs.wand-py.org/en/${finalAttrs.version}/changes.html";
+    description = "Ctypes-based simple MagickWand API binding for Python";
+    homepage = "http://wand-py.org/";
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ dotlambda ];
+  };
+})
