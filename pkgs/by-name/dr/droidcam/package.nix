@@ -1,0 +1,74 @@
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  ffmpeg,
+  libjpeg_turbo,
+  gtk3,
+  alsa-lib,
+  speex,
+  libusbmuxd,
+  libappindicator,
+  pkg-config,
+}:
+
+stdenv.mkDerivation (finalAttrs: {
+  pname = "droidcam";
+  version = "2.1.7";
+
+  src = fetchFromGitHub {
+    owner = "dev47apps";
+    repo = "droidcam-linux-client";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-W9C6OPv/6KbIINPpSix3XM2rUnaFAcQTucBdZ40Mbx4=";
+  };
+
+  nativeBuildInputs = [
+    pkg-config
+  ];
+
+  buildInputs = [
+    ffmpeg
+    libjpeg_turbo
+    gtk3
+    alsa-lib
+    speex
+    libusbmuxd
+    libappindicator
+  ];
+
+  strictDeps = true;
+
+  postPatch = ''
+    substituteInPlace src/droidcam.c \
+      --replace-fail "/opt/droidcam-icon.png" "$out/share/icons/hicolor/96x96/apps/droidcam.png"
+    substituteInPlace droidcam.desktop \
+      --replace-fail "/opt/droidcam-icon.png" "droidcam" \
+      --replace-fail "/usr/local/bin/droidcam" "droidcam"
+  '';
+
+  preBuild = ''
+    makeFlags+=("JPEG=$(pkg-config --libs --cflags libturbojpeg)")
+    makeFlags+=("USBMUXD=$(pkg-config --libs --cflags libusbmuxd-2.0)")
+  '';
+
+  installPhase = ''
+    runHook preInstall
+
+    install -Dt $out/bin droidcam droidcam-cli
+    install -D icon2.png $out/share/icons/hicolor/96x96/apps/droidcam.png
+    install -D droidcam.desktop $out/share/applications/droidcam.desktop
+
+    runHook postInstall
+  '';
+
+  __structuredAttrs = true;
+
+  meta = {
+    description = "Linux client for DroidCam app";
+    homepage = "https://github.com/dev47apps/droidcam-linux-client";
+    license = lib.licenses.gpl2Only;
+    maintainers = [ lib.maintainers.suhr ];
+    platforms = lib.platforms.linux;
+  };
+})
