@@ -1,0 +1,40 @@
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  cmake,
+  SDL2,
+  perl,
+}:
+
+stdenv.mkDerivation (finalAttrs: {
+  pname = "dethrace";
+  version = "0.11.0";
+
+  src = fetchFromGitHub {
+    owner = "dethrace-labs";
+    repo = "dethrace";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-0gow6Dc64MrFTzeZgzT/NHw9XSE98KS5+opGNKwrioM=";
+    fetchSubmodules = true;
+  };
+
+  buildInputs = [ SDL2 ];
+  nativeBuildInputs = [
+    cmake
+    perl
+  ];
+
+  installPhase = ''
+    install -Dm755 dethrace $out/bin/dethrace
+  '';
+
+  meta = {
+    homepage = "https://twitter.com/dethrace_labs";
+    description = "Reverse engineering the 1997 game Carmageddon";
+    license = lib.licenses.gpl3;
+    platforms = lib.platforms.linux;
+    maintainers = with lib.maintainers; [ astro ];
+    mainProgram = "dethrace";
+  };
+})
